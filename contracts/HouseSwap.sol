@@ -71,7 +71,7 @@ contract HouseSwap {
     {
         require(targetUser == _targetUser, 'Target user should be registered buyer');
         require(keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked('A')), 'An offer has not been accepted yet');
-        
+
         if(swap.extra.extraPayOriginToTarget > 0) {
             bool success = sendTransfer(owner, swap.extra.extraPayOriginToTarget);
             require(success, "Transfer to target failed.");
@@ -110,7 +110,7 @@ contract HouseSwap {
     function sendTransfer(address payable addr, uint256 amount ) private returns (bool){
         uint256 etherBalance = balances[addr] / 1 ether;
         require(etherBalance >= amount, 'Deposit has not been sent or is lower than required' );
-        (bool success, ) = owner.call{value: swap.extra.extraPayTargetToOrigin}("");
+        (bool success, ) = addr.call{value: swap.extra.extraPayTargetToOrigin}("");
         return success;
     }
 

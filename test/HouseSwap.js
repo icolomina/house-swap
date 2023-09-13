@@ -34,7 +34,7 @@ describe("House Swap Contract", function () {
     await expect(houseSwapToken.addOffer(data.targetAddress, data.house, data.extra)).to.be.revertedWith('An offer has been already accepted');
     await expect(houseSwapToken.performSwap(data.targetAddress2)).to.be.revertedWith('Target user should be registered buyer');
 
-    await houseSwapToken.confirmOfferAcceptation(data.targetAddress);
+    await houseSwapToken.performSwap(data.targetAddress);
     const swap = await houseSwapToken.info();
     const ownerAddress = await data.owner.getAddress();
 
