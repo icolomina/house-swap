@@ -1,33 +1,34 @@
 pragma solidity ^0.8.16;
 pragma experimental ABIEncoderV2;
 
-import "hardhat/console.sol";
-
 contract HouseSwap {
 
-    event Received(address, uint);
     event NewOffer(Offer offer);
+    event BalanceUpdated(address, uint256);
 
     address payable owner;
     address payable targetUser;
     Swap swap;
-    string status;
+    Statuses status;
     mapping (address => uint256) balances;
 
-    struct SwapExtra {
-        uint256 extraPayOriginToTarget;
-        uint256 extraPayTargetToOrigin;
+    enum Statuses {
+        PENDING,
+        INITIALIZED,
+        ACCEPTED,
+        FINISHED
     }
 
     struct Swap {
         House origin;
         House target;
-        SwapExtra extra;
+        uint256 amountPayOriginToTarget;
+        uint256 amountPayTargetToOrigin;
     }
 
     struct House {
         string houseType;
-        uint32 value;
+        uint value;
         string link;
         address propietary;
     }
@@ -42,52 +43,62 @@ contract HouseSwap {
 
     constructor() payable {
         owner  = payable(msg.sender);
-        status = 'P';
+        status = Statuses.PENDING;
     } 
 
-    function initialize(House memory house ) external returns (House memory) {
-        swap.origin = house;
-        return house;
+    modifier hasToBeInitialized {
+        require(keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked(Statuses.INITIALIZED)), 'An offer has been already accepted or contract has not been initialized');
+        _;
     }
 
-    function addOffer(address _targetUser, House memory house, SwapExtra memory swapExtra) external {
-        require(keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked('P')), 'An offer has been already accepted');
-        Offer memory offer = Offer(house, _targetUser, swapExtra.extraPayOriginToTarget, swapExtra.extraPayTargetToOrigin );
+    modifier isOwner {
+        require(msg.sender == owner, 'Required contract owner');
+        _;
+    }
+
+    function initialize(House memory house ) external isOwner {
+        house.propietary = owner;
+        swap.origin = house;
+        status = Statuses.INITIALIZED;
+    }
+
+    function addOffer(address payable _targetUser, House memory house, uint256 amountPayOriginToTarget, uint256 amountPayTargetToOrigin) external hasToBeInitialized {
+        Offer memory offer = Offer(house, _targetUser, amountPayOriginToTarget, amountPayTargetToOrigin );
         emit NewOffer(offer);
     }
 
-    function acceptOffer(address payable _targetUser, House memory house, SwapExtra memory swapExtra) external
+    function acceptOffer(address payable _targetUser, House memory house, uint256 amountPayOriginToTarget, uint256 amountPayTargetToOrigin) external hasToBeInitialized isOwner 
     {
         targetUser = _targetUser;
         House memory targetHouse = house;
-        SwapExtra memory extra   = swapExtra;
 
         swap.target = targetHouse;
-        swap.extra  = extra;
-        status = 'A';
+        swap.amountPayOriginToTarget = amountPayOriginToTarget;
+        swap.amountPayTargetToOrigin = amountPayTargetToOrigin;
+        status = Statuses.ACCEPTED;
     }
 
-    function performSwap(address payable _targetUser) external payable
+    function performSwap() external
     {
-        require(targetUser == _targetUser, 'Target user should be registered buyer');
-        require(keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked('A')), 'An offer has not been accepted yet');
+        require(targetUser == msg.sender, 'Only target user can confirm swap');
+        require(keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked(Statuses.ACCEPTED)), 'An offer has not been accepted yet');
 
-        if(swap.extra.extraPayOriginToTarget > 0) {
-            bool success = sendTransfer(owner, swap.extra.extraPayOriginToTarget);
+        if(swap.amountPayOriginToTarget > 0) {
+            bool success = sendTransfer(owner, swap.amountPayOriginToTarget);
             require(success, "Transfer to target failed.");
         }
 
-        if(swap.extra.extraPayTargetToOrigin > 0) {
-            bool success = sendTransfer(targetUser, swap.extra.extraPayTargetToOrigin);
+        if(swap.amountPayTargetToOrigin > 0) {
+            bool success = sendTransfer(targetUser, swap.amountPayTargetToOrigin);
             require(success, "Transfer to owner failed.");
         }
 
         swap.origin.propietary = targetUser;
         swap.target.propietary = owner;
-        status = 'F';
+        status = Statuses.FINISHED;
     }
 
-    function getStatus() public view returns (string memory) {
+    function getStatus() public view returns (Statuses) {
         return status;
     }
 
@@ -96,21 +107,22 @@ contract HouseSwap {
     }
 
     function deposit() external payable {
-        if(swap.extra.extraPayOriginToTarget > 0){
+        if(swap.amountPayOriginToTarget > 0){
             require(msg.sender == owner,  'Origin must deposit enougth funds');
         }
 
-        if(swap.extra.extraPayTargetToOrigin > 0){
+        if(swap.amountPayTargetToOrigin > 0){
             require(msg.sender == targetUser,  'Target must deposit enougth funds');
         }
 
         balances[msg.sender] = msg.value;
+        emit BalanceUpdated(msg.sender, msg.value);
     }
 
     function sendTransfer(address payable addr, uint256 amount ) private returns (bool){
         uint256 etherBalance = balances[addr] / 1 ether;
         require(etherBalance >= amount, 'Deposit has not been sent or is lower than required' );
-        (bool success, ) = addr.call{value: swap.extra.extraPayTargetToOrigin}("");
+        (bool success, ) = addr.call{value: amount}("");
         return success;
     }
 
