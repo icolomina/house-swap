@@ -23,7 +23,7 @@ describe("House Swap Contract", function () {
 
     const data = await getData();
     const houseSwapToken = await ethers.deployContract("HouseSwap");
-    await expect(houseSwapToken.addOffer(data.targetAddress, data.house, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.be.revertedWith('An offer has been already accepted or contract has not been initialized');
+    await expect(houseSwapToken.connect(data.addr1).addOffer(data.house, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.be.revertedWith('An offer has been already accepted or contract has not been initialized');
   });
 
   it("Should emit a 'NewOffer' event afer offer sent", async function() {
@@ -32,7 +32,7 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
     await houseSwapToken.initialize(data.house);
     expect(await houseSwapToken.getStatus()).to.equal(1);
-    await expect(houseSwapToken.addOffer(data.targetAddress, data.house, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.emit(houseSwapToken, "NewOffer");
+    await expect(houseSwapToken.connect(data.addr1).addOffer(data.house, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.emit(houseSwapToken, "NewOffer");
   });
 
 
@@ -40,7 +40,7 @@ describe("House Swap Contract", function () {
     const data = await getData();
     const houseSwapToken = await ethers.deployContract("HouseSwap");
     await houseSwapToken.initialize(data.house);
-    await expect(houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.emit(houseSwapToken, "NewOffer");
+    await expect(houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.emit(houseSwapToken, "NewOffer");
     await expect(houseSwapToken.connect(data.addr2).acceptOffer(data.targetAddress, data.house, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.be.revertedWith('Required contract owner');
   });
 
@@ -50,17 +50,17 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
 
     await houseSwapToken.initialize(data.house);
-    await expect(houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.emit(houseSwapToken, "NewOffer");
+    await expect(houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.emit(houseSwapToken, "NewOffer");
     houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
     expect(await houseSwapToken.getStatus()).to.equal(2);
-    await expect(houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.be.revertedWith('An offer has been already accepted or contract has not been initialized');
+    await expect(houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin)).to.be.revertedWith('An offer has been already accepted or contract has not been initialized');
   });
 
   it("Should not perform swap because sender is not who sent the offer", async function() {
     const data = await getData();
     const houseSwapToken = await ethers.deployContract("HouseSwap");
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
     await expect(houseSwapToken.connect(data.addr2).performSwap()).to.be.revertedWith('Only target user can confirm swap');
   });
@@ -69,7 +69,7 @@ describe("House Swap Contract", function () {
     const data = await getData();
     const houseSwapToken = await ethers.deployContract("HouseSwap");
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, data.amountPayTargetToOrigin);
     await houseSwapToken.connect(data.addr1).performSwap();
 
@@ -82,7 +82,7 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
 
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await expect(houseSwapToken.connect(data.addr1).deposit({ value: ethers.utils.parseEther('1') })).to.be.revertedWith("Origin must deposit enougth funds");
   });
@@ -93,7 +93,7 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
 
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, 1);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, data.amountPayOriginToTarget, 1);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, data.amountPayOriginToTarget, 1);
     await expect(houseSwapToken.deposit({ value: ethers.utils.parseEther('1') })).to.be.revertedWith("Target must deposit enougth funds");
   });
@@ -104,7 +104,7 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
 
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await expect(houseSwapToken.deposit({ value: ethers.utils.parseEther('1') })).to.emit(houseSwapToken, "BalanceUpdated");
   });
@@ -115,7 +115,7 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
 
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await houseSwapToken.deposit({ value: ethers.utils.parseEther('0.8') });
 
@@ -128,7 +128,7 @@ describe("House Swap Contract", function () {
     const houseSwapToken = await ethers.deployContract("HouseSwap");
 
     await houseSwapToken.initialize(data.house);
-    await houseSwapToken.addOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
+    await houseSwapToken.connect(data.addr1).addOffer(data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await houseSwapToken.acceptOffer(data.targetAddress, data.houseToSwap, 1, data.amountPayTargetToOrigin);
     await houseSwapToken.deposit({ value: ethers.utils.parseEther('1.05') });
 

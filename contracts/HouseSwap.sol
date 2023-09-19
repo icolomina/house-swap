@@ -36,12 +36,12 @@ contract HouseSwap {
     struct Offer {
         House house;
         address targetUser;
-        uint256 extraPayOriginToTarget;
-        uint256 extraPayTargetToOrigin;
+        uint256 amountPayOriginToTarget;
+        uint256 amountPayTargetToOrigin;
     }
 
 
-    constructor() payable {
+    constructor() {
         owner  = payable(msg.sender);
         status = Statuses.PENDING;
     } 
@@ -62,8 +62,8 @@ contract HouseSwap {
         status = Statuses.INITIALIZED;
     }
 
-    function addOffer(address payable _targetUser, House memory house, uint256 amountPayOriginToTarget, uint256 amountPayTargetToOrigin) external hasToBeInitialized {
-        Offer memory offer = Offer(house, _targetUser, amountPayOriginToTarget, amountPayTargetToOrigin );
+    function addOffer(House memory house, uint256 amountPayOriginToTarget, uint256 amountPayTargetToOrigin) external hasToBeInitialized {
+        Offer memory offer = Offer(house, msg.sender, amountPayOriginToTarget, amountPayTargetToOrigin );
         emit NewOffer(offer);
     }
 
@@ -102,7 +102,7 @@ contract HouseSwap {
         return status;
     }
 
-    function info() public view returns (Swap memory) {
+    function info() public view hasToBeInitialized returns (Swap memory) {
         return swap;
     }
 
