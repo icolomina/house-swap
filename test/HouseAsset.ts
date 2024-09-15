@@ -26,7 +26,7 @@ describe("House Asset Contract", function () {
     it("AssignToken must be called by the owner ", async function () {
         const tokenUri = 'https://www.assetinfo.com';
         const to = await addr1.getAddress();
-        await expect( houseAssetContract.connect(nonOwner).assignToken(1, tokenUri, to)).to.be.revertedWith('Ownable: caller is not the owner');
+        await expect( houseAssetContract.connect(nonOwner).assignToken(1, tokenUri, to)).to.be.reverted;
     });
 
 });

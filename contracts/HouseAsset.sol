@@ -11,7 +11,7 @@ contract HouseAsset is ERC721URIStorage, Ownable {
 
     constructor(string memory _name, string memory _symbol) 
         ERC721(_name, _symbol)
-        Ownable()
+        Ownable(msg.sender)
     { }
 
     function assignToken(uint256 tokenId, string memory _tokenURI, address to) public onlyOwner {

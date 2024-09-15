@@ -9,7 +9,7 @@ contract HouseTestTokenERC20 is ERC20, Ownable {
 
     constructor(string memory _name, string memory _symbol) 
         ERC20(_name, _symbol)
-        Ownable()
+        Ownable(msg.sender)
     { }
 
     function mint(address account, uint256 amount) public onlyOwner {
