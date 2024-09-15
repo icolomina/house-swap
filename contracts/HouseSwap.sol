@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./HouseAsset.sol";
-import "hardhat/console.sol";
 
 contract HouseSwap {
 
