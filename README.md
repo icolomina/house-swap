@@ -39,11 +39,21 @@ npm install
 npx hardhat compile
 ```
 
-### Test the contracts
+#### Test the contracts
 
 ```shell
 npx hardhat test
-``
+```
+
+#### Use the deployment script
+
+The deployment script uses two [ignition](https://hardhat.org/ignition/docs/guides/scripts) modules to deploy first the asset and the token. Then the script gets the asset contract and a signer and uses the asset **assignToken** function to assign a token id to the signer address. Then it deploys the Swap contract using both the asset and token addresses and the assigned token id.
+
+```shell
+npx hardhat run scripts/deploy.ts
+```
+
+
 
 
 
